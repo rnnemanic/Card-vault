@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Richard’s Card Vault" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Richard’s Card Vault</title>
+<style>
+:root{
+  --bg:#0f172a; --panel:#111827; --panel2:#1f2937; --text:#f8fafc; --muted:#94a3b8;
+  --accent:#facc15; --danger:#ef4444; --good:#22c55e; --line:#334155;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  background:linear-gradient(180deg,#020617,#111827); color:var(--text); min-height:100vh;
+}
+header{
+  position:sticky; top:0; z-index:10; background:rgba(2,6,23,.92); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line); padding:14px 16px;
+}
+h1{margin:0;font-size:24px}
+.sub{color:var(--muted);font-size:13px;margin-top:3px}
+main{padding:14px;max-width:1000px;margin:auto}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat,.panel{background:rgba(17,24,39,.92);border:1px solid var(--line);border-radius:16px;padding:14px}
+.stat .num{font-size:22px;font-weight:800;color:var(--accent)}
+.stat .label{font-size:12px;color:var(--muted);margin-top:3px}
+input,select,textarea,button{
+  width:100%; padding:12px; border-radius:12px; border:1px solid var(--line);
+  background:#020617; color:var(--text); font-size:15px; margin:5px 0;
+}
+textarea{min-height:70px}
+button{background:var(--accent);color:#111827;font-weight:800;border:0}
+button.secondary{background:#334155;color:white}
+button.danger{background:var(--danger);color:white}
+button.good{background:var(--good);color:#052e16}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.card{
+  background:rgba(15,23,42,.95); border:1px solid var(--line); border-radius:16px; padding:12px; margin:10px 0;
+}
+.cardTop{display:flex;gap:12px;align-items:flex-start}
+.thumb{
+  width:82px;height:112px;border-radius:10px;object-fit:cover;background:#334155;border:1px solid var(--line);
+  flex-shrink:0; display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;
+}
+.title{font-weight:900;font-size:17px}
+.meta{color:var(--muted);font-size:13px;line-height:1.35;margin-top:3px}
+.value{font-weight:900;color:var(--accent);margin-top:8px}
+.profit.goodText{color:var(--good)} .profit.badText{color:#f87171}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
+.small{font-size:12px;color:var(--muted)}
+.hidden{display:none}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.badge{display:inline-block;background:#334155;border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-size:12px;margin-top:6px}
+@media(max-width:650px){.grid{grid-template-columns:repeat(2,1fr)} .row{grid-template-columns:1fr} .actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Richard’s Card Vault</h1>
+  <div class="sub">Custom collection tracker for rookies, autos, vintage, low-pop cards, and 1/1s.</div>
+</header>
+
+<main>
+  <section class="grid">
+    <div class="stat"><div class="num" id="totalCards">0</div><div class="label">Cards</div></div>
+    <div class="stat"><div class="num" id="totalValue">$0</div><div class="label">Total Value</div></div>
+    <div class="stat"><div class="num" id="totalCost">$0</div><div class="label">Total Cost</div></div>
+    <div class="stat"><div class="num" id="totalProfit">$0</div><div class="label">Profit / Loss</div></div>
+  </section>
+
+  <section class="panel" style="margin-top:12px">
+    <h2 id="formTitle">Add Card</h2>
+    <input id="player" placeholder="Player / Subject">
+    <input id="cardName" placeholder="Card Name / Description">
+    <div class="row">
+      <input id="year" placeholder="Year">
+      <input id="brand" placeholder="Brand / Set">
+    </div>
+    <div class="row">
+      <input id="cardNumber" placeholder="Card #">
+      <input id="parallel" placeholder="Parallel / Insert">
+    </div>
+    <div class="row">
+      <input id="serial" placeholder="Serial Number, e.g. 1/1, /25">
+      <select id="category">
+        <option value="Baseball">Baseball</option>
+        <option value="Basketball">Basketball</option>
+        <option value="Football">Football</option>
+        <option value="Hockey">Hockey</option>
+        <option value="Vintage">Vintage</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="row">
+      <input id="grade" placeholder="Grade / Condition">
+      <input id="cert" placeholder="Cert #">
+    </div>
+    <div class="row">
+      <input id="cost" type="number" step="0.01" placeholder="Purchase Cost">
+      <input id="value" type="number" step="0.01" placeholder="Current Value">
+    </div>
+    <input id="lastComp" placeholder="Last Comp / Source Note">
+    <textarea id="notes" placeholder="Notes: 1/1 pricing logic, offers, trade info, condition notes, etc."></textarea>
+    <label class="small">Front photo</label>
+    <input id="frontPhoto" type="file" accept="image/*">
+    <label class="small">Back photo</label>
+    <input id="backPhoto" type="file" accept="image/*">
+    <button onclick="saveCard()">Save Card</button>
+    <button class="secondary hidden" id="cancelEdit" onclick="cancelEdit()">Cancel Edit</button>
+  </section>
+
+  <section class="panel" style="margin-top:12px">
+    <h2>Search / Filter</h2>
+    <input id="search" placeholder="Search player, set, card, serial..." oninput="render()">
+    <div class="row">
+      <select id="filterCategory" onchange="render()">
+        <option value="">All Categories</option>
+        <option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Vintage</option><option>Other</option>
+      </select>
+      <select id="sortBy" onchange="render()">
+        <option value="newest">Newest First</option>
+        <option value="valueHigh">Value High to Low</option>
+        <option value="valueLow">Value Low to High</option>
+        <option value="player">Player A-Z</option>
+      </select>
+    </div>
+    <div class="row">
+      <button class="secondary" onclick="exportCSV()">Export CSV</button>
+      <button class="secondary" onclick="downloadBackup()">Backup JSON</button>
+    </div>
+    <label class="small">Import backup JSON</label>
+    <input type="file" accept=".json,application/json" onchange="importBackup(event)">
+  </section>
+
+  <section id="list"></section>
+</main>
+
+<script>
+let cards = JSON.parse(localStorage.getItem("richardsCardVaultFull") || "[]");
+let editingId = null;
+
+const $ = id => document.getElementById(id);
+const money = n => "$" + (Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:2});
+
+function fileToDataURL(input){
+  return new Promise(resolve=>{
+    const file = input.files && input.files[0];
+    if(!file) return resolve("");
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.readAsDataURL(file);
+  });
+}
+function persist(){ localStorage.setItem("richardsCardVaultFull", JSON.stringify(cards)); }
+
+async function saveCard(){
+  const existing = editingId ? cards.find(c=>c.id===editingId) : null;
+  const frontNew = await fileToDataURL($("frontPhoto"));
+  const backNew = await fileToDataURL($("backPhoto"));
+  const card = {
+    id: editingId || Date.now().toString(),
+    created: existing?.created || new Date().toISOString(),
+    updated: new Date().toISOString(),
+    player:$("player").value.trim(),
+    cardName:$("cardName").value.trim(),
+    year:$("year").value.trim(),
+    brand:$("brand").value.trim(),
+    cardNumber:$("cardNumber").value.trim(),
+    parallel:$("parallel").value.trim(),
+    serial:$("serial").value.trim(),
+    category:$("category").value,
+    grade:$("grade").value.trim(),
+    cert:$("cert").value.trim(),
+    cost:parseFloat($("cost").value)||0,
+    value:parseFloat($("value").value)||0,
+    lastComp:$("lastComp").value.trim(),
+    notes:$("notes").value.trim(),
+    frontPhoto: frontNew || existing?.frontPhoto || "",
+    backPhoto: backNew || existing?.backPhoto || ""
+  };
+  if(!card.player && !card.cardName){ alert("Add at least a player or card name."); return; }
+  if(editingId){ cards = cards.map(c=>c.id===editingId?card:c); }
+  else { cards.unshift(card); }
+  persist(); clearForm(); render();
+}
+
+function clearForm(){
+  ["player","cardName","year","brand","cardNumber","parallel","serial","grade","cert","cost","value","lastComp","notes"].forEach(id=>$(id).value="");
+  $("category").value="Baseball"; $("frontPhoto").value=""; $("backPhoto").value="";
+  editingId=null; $("formTitle").textContent="Add Card"; $("cancelEdit").classList.add("hidden");
+}
+function cancelEdit(){ clearForm(); }
+
+function editCard(id){
+  const c = cards.find(x=>x.id===id); if(!c) return;
+  editingId=id;
+  ["player","cardName","year","brand","cardNumber","parallel","serial","category","grade","cert","cost","value","lastComp","notes"].forEach(k=>$(k).value=c[k]||"");
+  $("formTitle").textContent="Edit Card"; $("cancelEdit").classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function deleteCard(id){
+  if(confirm("Delete this card?")){
+    cards = cards.filter(c=>c.id!==id); persist(); render();
+  }
+}
+
+function render(){
+  const q = $("search").value.toLowerCase();
+  const cat = $("filterCategory").value;
+  let shown = cards.filter(c=>{
+    const hay = Object.values(c).join(" ").toLowerCase();
+    return (!q || hay.includes(q)) && (!cat || c.category===cat);
+  });
+  const sort = $("sortBy").value;
+  if(sort==="valueHigh") shown.sort((a,b)=>(b.value||0)-(a.value||0));
+  if(sort==="valueLow") shown.sort((a,b)=>(a.value||0)-(b.value||0));
+  if(sort==="player") shown.sort((a,b)=>(a.player||"").localeCompare(b.player||""));
+  if(sort==="newest") shown.sort((a,b)=>(b.created||"").localeCompare(a.created||""));
+
+  const totalValue = cards.reduce((s,c)=>s+(Number(c.value)||0),0);
+  const totalCost = cards.reduce((s,c)=>s+(Number(c.cost)||0),0);
+  $("totalCards").textContent=cards.length;
+  $("totalValue").textContent=money(totalValue);
+  $("totalCost").textContent=money(totalCost);
+  $("totalProfit").textContent=money(totalValue-totalCost);
+  $("totalProfit").style.color = totalValue-totalCost >= 0 ? "var(--good)" : "#f87171";
+
+  $("list").innerHTML = shown.map(c=>{
+    const profit=(Number(c.value)||0)-(Number(c.cost)||0);
+    const img = c.frontPhoto ? `<img class="thumb" src="${c.frontPhoto}">` : `<div class="thumb">No Photo</div>`;
+    return `<div class="card">
+      <div class="cardTop">
+        ${img}
+        <div style="flex:1">
+          <div class="title">${escapeHTML(c.player||"Unknown")} ${c.serial==="1/1" ? '<span class="badge">1/1</span>' : ''}</div>
+          <div class="meta">${escapeHTML(c.cardName||"")}<br>
+          ${escapeHTML([c.year,c.brand,c.parallel,c.cardNumber].filter(Boolean).join(" • "))}<br>
+          ${escapeHTML([c.serial,c.grade,c.cert].filter(Boolean).join(" • "))}</div>
+          <div class="value">${money(c.value)}</div>
+          <div class="profit ${profit>=0?'goodText':'badText'}">P/L: ${money(profit)}</div>
+        </div>
+      </div>
+      ${c.lastComp?`<div class="meta"><b>Comp:</b> ${escapeHTML(c.lastComp)}</div>`:""}
+      ${c.notes?`<div class="meta"><b>Notes:</b> ${escapeHTML(c.notes)}</div>`:""}
+      ${c.backPhoto?`<details><summary class="small">View back photo</summary><img style="width:100%;max-width:320px;border-radius:12px;margin-top:8px" src="${c.backPhoto}"></details>`:""}
+      <div class="actions">
+        <button class="secondary" onclick="editCard('${c.id}')">Edit</button>
+        <button class="danger" onclick="deleteCard('${c.id}')">Delete</button>
+        <button class="secondary" onclick="duplicateCard('${c.id}')">Duplicate</button>
+      </div>
+    </div>`;
+  }).join("") || `<div class="panel" style="margin-top:12px">No cards yet. Add your first one above.</div>`;
+}
+function duplicateCard(id){
+  const c=cards.find(x=>x.id===id); if(!c) return;
+  cards.unshift({...c,id:Date.now().toString(),created:new Date().toISOString(),updated:new Date().toISOString()});
+  persist(); render();
+}
+function escapeHTML(s){ return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m])); }
+
+function exportCSV(){
+  const headers=["Player","Card Name","Year","Brand/Set","Card #","Parallel","Serial","Category","Grade","Cert","Cost","Value","Last Comp","Notes"];
+  const rows=cards.map(c=>[c.player,c.cardName,c.year,c.brand,c.cardNumber,c.parallel,c.serial,c.category,c.grade,c.cert,c.cost,c.value,c.lastComp,c.notes]);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  download("richards-card-vault.csv", csv, "text/csv");
+}
+function downloadBackup(){
+  download("richards-card-vault-backup.json", JSON.stringify(cards,null,2), "application/json");
+}
+function download(name, content, type){
+  const blob=new Blob([content],{type});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importBackup(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const imported=JSON.parse(reader.result);
+      if(!Array.isArray(imported)) throw new Error("Bad file");
+      if(confirm("Replace your current vault with this backup?")){
+        cards=imported; persist(); render();
+      }
+    }catch(err){ alert("That backup file could not be imported."); }
+  };
+  reader.readAsText(file);
+}
+render();
+</script>
+</body>
+</html>
