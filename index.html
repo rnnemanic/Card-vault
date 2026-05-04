@@ -46,6 +46,38 @@
     .hidden { display: none; }
     #preview { max-width: 180px; max-height: 220px; object-fit: contain; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border); background: #0b1018; }
     .search-row { display: grid; grid-template-columns: 1fr 160px; gap: 10px; }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .stat-box {
+      background: #0f1724;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    }
+    .stat-label {
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .stat-number {
+      margin: 0;
+      font-size: 23px;
+      font-weight: bold;
+      color: var(--text);
+    }
+    .stat-number.good { color: #76e39a; }
+    .stat-number.bad { color: #ff8c8c; }
+    .stat-number.neutral { color: #d7ecff; }
+
   </style>
 </head>
 <body>
@@ -54,6 +86,41 @@
 </header>
 
 <main>
+
+
+
+  <section class="panel">
+    <h2>Collection Dashboard</h2>
+    <div class="dashboard-grid">
+      <div class="stat-box">
+        <p class="stat-label">Total Cards</p>
+        <p id="totalCardsValue" class="stat-number neutral">0</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-label">Total Paid</p>
+        <p id="totalPaidValue" class="stat-number neutral">$0.00</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-label">Collection Value</p>
+        <p id="totalCollectionValue" class="stat-number neutral">$0.00</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-label">Profit / Loss</p>
+        <p id="profitLossValue" class="stat-number neutral">$0.00</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-label">ROI</p>
+        <p id="roiValue" class="stat-number neutral">0%</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-label">Average Card Value</p>
+        <p id="averageCardValue" class="stat-number neutral">$0.00</p>
+      </div>
+    </div>
+    <p id="profitLossNote" class="status"></p>
+  </section>
+
+  
   <section class="panel">
     <h2>Add Card</h2>
 
@@ -136,7 +203,7 @@
     </div>
 
     <div id="status" class="status"></div>
-    <div class="warning">Version 2.2: IndexedDB picture storage, photo library access, value, grade, status, serial number, tags, and storage location.</div>
+    <div class="warning">Version 2.5: Dashboard boxes added at the top, with editable cards, photo library access, IndexedDB picture storage, and full value/profit tracking.</div>
   </section>
 
   <section class="panel">
@@ -148,8 +215,7 @@
       <input id="importFile" class="hidden" type="file" accept="application/json" />
     </div>
   </section>
-
-  <section class="panel">
+<section class="panel">
     <h2>My Cards</h2>
     <div class="search-row">
       <input id="searchBox" placeholder="Search player, year, brand, tags, status..." />
@@ -194,12 +260,20 @@
     cards: document.getElementById("cards"),
     cardCount: document.getElementById("cardCount"),
     searchBox: document.getElementById("searchBox"),
-    sortSelect: document.getElementById("sortSelect")
+    sortSelect: document.getElementById("sortSelect"),
+    totalCardsValue: document.getElementById("totalCardsValue"),
+    totalPaidValue: document.getElementById("totalPaidValue"),
+    totalCollectionValue: document.getElementById("totalCollectionValue"),
+    profitLossValue: document.getElementById("profitLossValue"),
+    profitLossNote: document.getElementById("profitLossNote"),
+    roiValue: document.getElementById("roiValue"),
+    averageCardValue: document.getElementById("averageCardValue")
   };
 
   let db;
   let cards = [];
   let compressedImage = "";
+  let editingCardId = null;
 
   function openDB() {
     return new Promise((resolve, reject) => {
@@ -304,8 +378,10 @@
   });
 
   document.getElementById("saveCardBtn").addEventListener("click", async () => {
+    const existingCard = editingCardId ? cards.find(card => card.id === editingCardId) : null;
+
     const card = {
-      id: Date.now(),
+      id: editingCardId || Date.now(),
       playerName: fields.playerName.value.trim(),
       sport: fields.sport.value.trim(),
       year: fields.year.value.trim(),
@@ -321,8 +397,9 @@
       location: fields.location.value.trim(),
       tags: fields.tags.value.trim(),
       notes: fields.notes.value.trim(),
-      image: compressedImage,
-      createdAt: new Date().toISOString()
+      image: compressedImage || (existingCard ? existingCard.image : ""),
+      createdAt: existingCard ? existingCard.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     if (!card.playerName && !card.brand && !card.year) {
@@ -334,7 +411,9 @@
       await putCard(card);
       clearForm();
       await refreshCards();
-      fields.status.textContent = "Card saved.";
+      fields.status.textContent = editingCardId ? "Card updated." : "Card saved.";
+      editingCardId = null;
+      document.getElementById("saveCardBtn").textContent = "Save Card";
     } catch (error) {
       alert("The card could not be saved. Try exporting a backup, then clearing Safari website data for this site.");
       console.error(error);
@@ -350,6 +429,8 @@
       }
     });
     compressedImage = "";
+    editingCardId = null;
+    document.getElementById("saveCardBtn").textContent = "Save Card";
     fields.preview.src = "";
     fields.preview.classList.add("hidden");
   }
@@ -359,6 +440,42 @@
     await deleteCardFromDB(id);
     await refreshCards();
   };
+
+  window.editCard = function(id) {
+    const card = cards.find(card => card.id === id);
+    if (!card) return;
+
+    editingCardId = id;
+    fields.playerName.value = card.playerName || "";
+    fields.sport.value = card.sport || "";
+    fields.year.value = card.year || "";
+    fields.brand.value = card.brand || "";
+    fields.cardNumber.value = card.cardNumber || "";
+    fields.parallel.value = card.parallel || "";
+    fields.serialNumber.value = card.serialNumber || "";
+    fields.grade.value = card.grade || "";
+    fields.condition.value = card.condition || "";
+    fields.purchasePrice.value = card.purchasePrice || "";
+    fields.estimatedValue.value = card.estimatedValue || "";
+    fields.statusSelect.value = card.cardStatus || "";
+    fields.location.value = card.location || "";
+    fields.tags.value = card.tags || "";
+    fields.notes.value = card.notes || "";
+    compressedImage = "";
+
+    if (card.image) {
+      fields.preview.src = card.image;
+      fields.preview.classList.remove("hidden");
+    } else {
+      fields.preview.src = "";
+      fields.preview.classList.add("hidden");
+    }
+
+    document.getElementById("saveCardBtn").textContent = "Update Card";
+    fields.status.textContent = "Editing card. Change what you need, then tap Update Card.";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
 
   function escapeHTML(text) {
     return String(text || "").replace(/[&<>"']/g, match => ({
@@ -399,7 +516,36 @@
     return list;
   }
 
+  function updateCollectionSummary() {
+    const totalCards = cards.length;
+    const totalPaid = cards.reduce((sum, card) => sum + (Number(card.purchasePrice) || 0), 0);
+    const totalValue = cards.reduce((sum, card) => sum + (Number(card.estimatedValue) || 0), 0);
+    const profitLoss = totalValue - totalPaid;
+    const roi = totalPaid > 0 ? (profitLoss / totalPaid) * 100 : 0;
+    const averageValue = totalCards > 0 ? totalValue / totalCards : 0;
+
+    fields.totalCardsValue.textContent = String(totalCards);
+    fields.totalPaidValue.textContent = money(totalPaid);
+    fields.totalCollectionValue.textContent = money(totalValue);
+    fields.profitLossValue.textContent = money(profitLoss);
+    fields.roiValue.textContent = roi.toFixed(1) + "%";
+    fields.averageCardValue.textContent = money(averageValue);
+
+    const className = profitLoss > 0 ? "stat-number good" : profitLoss < 0 ? "stat-number bad" : "stat-number neutral";
+    fields.profitLossValue.className = className;
+    fields.roiValue.className = className;
+
+    if (profitLoss > 0) {
+      fields.profitLossNote.textContent = "Your collection is currently up " + money(profitLoss) + " based on entered values.";
+    } else if (profitLoss < 0) {
+      fields.profitLossNote.textContent = "Your collection is currently down " + money(Math.abs(profitLoss)) + " based on entered values.";
+    } else {
+      fields.profitLossNote.textContent = "Your collection is currently even based on entered values.";
+    }
+  }
+
   function renderCards() {
+    updateCollectionSummary();
     const list = filteredAndSortedCards();
     fields.cards.innerHTML = "";
     fields.cardCount.textContent = `${list.length} showing / ${cards.length} total card${cards.length === 1 ? "" : "s"} saved`;
@@ -430,7 +576,10 @@
           <p><strong>Tags:</strong> ${escapeHTML(card.tags)}</p>
           <p><strong>Condition:</strong> ${escapeHTML(card.condition)}</p>
           <p>${escapeHTML(card.notes)}</p>
-          <button class="danger" onclick="deleteCard(${card.id})">Delete</button>
+          <div class="button-row">
+            <button class="secondary" onclick="editCard(${card.id})">Edit</button>
+            <button class="danger" onclick="deleteCard(${card.id})">Delete</button>
+          </div>
         </div>
       `;
       fields.cards.appendChild(div);
