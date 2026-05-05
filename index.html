@@ -13,6 +13,10 @@
       --accent: #4da3ff;
       --danger: #ff5c5c;
       --border: #2a3850;
+      --box: #0f1724;
+      --good: #76e39a;
+      --bad: #ff8c8c;
+      --neutral: #d7ecff;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
@@ -20,6 +24,27 @@
     header h1 { margin: 0; font-size: 28px; }
     main { max-width: 1050px; margin: auto; padding: 16px; }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 18px; }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-top: 12px; }
+    .stat-box {
+      background: var(--box);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 92px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    }
+    .stat-label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .stat-number { margin: 0; font-size: 23px; font-weight: bold; color: var(--neutral); }
+    .stat-number.good { color: var(--good); }
+    .stat-number.bad { color: var(--bad); }
+    .stat-number.neutral { color: var(--neutral); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 14px; }
     label { display: block; margin-top: 10px; color: var(--muted); font-size: 14px; }
     input, textarea, select {
@@ -45,39 +70,27 @@
     .warning { color: #ffd166; font-size: 14px; margin-top: 8px; }
     .hidden { display: none; }
     #preview { max-width: 180px; max-height: 220px; object-fit: contain; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border); background: #0b1018; }
-    .search-row { display: grid; grid-template-columns: 1fr 160px; gap: 10px; }
-
-    .dashboard-grid {
+    .collection-controls {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
     }
-    .stat-box {
-      background: #0f1724;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    .sort-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
     }
-    .stat-label {
-      margin: 0 0 7px;
-      color: var(--muted);
+    .sort-buttons button {
+      margin-top: 0;
+      background: #394961;
       font-size: 13px;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: .04em;
+      padding: 10px;
     }
-    .stat-number {
-      margin: 0;
-      font-size: 23px;
-      font-weight: bold;
-      color: var(--text);
+    .sort-buttons button.active {
+      background: var(--accent);
     }
-    .stat-number.good { color: #76e39a; }
-    .stat-number.bad { color: #ff8c8c; }
-    .stat-number.neutral { color: #d7ecff; }
-
   </style>
 </head>
 <body>
@@ -86,9 +99,6 @@
 </header>
 
 <main>
-
-
-
   <section class="panel">
     <h2>Collection Dashboard</h2>
     <div class="dashboard-grid">
@@ -120,7 +130,6 @@
     <p id="profitLossNote" class="status"></p>
   </section>
 
-  
   <section class="panel">
     <h2>Add Card</h2>
 
@@ -203,7 +212,7 @@
     </div>
 
     <div id="status" class="status"></div>
-    <div class="warning">Version 2.5: Dashboard boxes added at the top, with editable cards, photo library access, IndexedDB picture storage, and full value/profit tracking.</div>
+    <div class="warning">Version 2.5.2: Same 2.5 dashboard-box layout, with search plus real collection organizing buttons.</div>
   </section>
 
   <section class="panel">
@@ -215,17 +224,28 @@
       <input id="importFile" class="hidden" type="file" accept="application/json" />
     </div>
   </section>
-<section class="panel">
-    <h2>My Cards</h2>
-    <div class="search-row">
-      <input id="searchBox" placeholder="Search player, year, brand, tags, status..." />
+
+  <section class="panel">
+    <h2>My Collection</h2>
+    <div class="collection-controls">
+      <input id="searchBox" placeholder="Search your collection by player, year, brand, value, tags, status..." />
+      <label for="sortSelect">Organize Collection</label>
       <select id="sortSelect">
-        <option value="newest">Newest</option>
-        <option value="valueHigh">Value High</option>
-        <option value="valueLow">Value Low</option>
-        <option value="player">Player A-Z</option>
-        <option value="year">Year</option>
+        <option value="playerAZ">Alphabetical A-Z</option>
+        <option value="playerZA">Alphabetical Z-A</option>
+        <option value="valueHigh">Highest Value to Lowest</option>
+        <option value="valueLow">Lowest Value to Highest</option>
+        <option value="paidHigh">Highest Paid to Lowest</option>
+        <option value="paidLow">Lowest Paid to Highest</option>
+        <option value="newest">Newest Added</option>
+        <option value="oldest">Oldest Added</option>
       </select>
+      <div class="sort-buttons">
+        <button id="sortAZBtn" type="button">Organize A-Z</button>
+        <button id="sortHighValueBtn" type="button">Highest Value</button>
+        <button id="sortLowValueBtn" type="button">Lowest Value</button>
+        <button id="sortNewestBtn" type="button">Newest Added</button>
+      </div>
     </div>
     <div id="cardCount" class="status"></div>
     <div id="cards" class="card-grid"></div>
@@ -294,7 +314,7 @@
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const request = store.getAll();
-      request.onsuccess = () => resolve((request.result || []).sort((a, b) => b.id - a.id));
+      request.onsuccess = () => resolve(request.result || []);
       request.onerror = () => reject(request.error);
     });
   }
@@ -476,7 +496,6 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-
   function escapeHTML(text) {
     return String(text || "").replace(/[&<>"']/g, match => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -501,17 +520,23 @@
       const haystack = [
         card.playerName, card.sport, card.year, card.brand, card.cardNumber, card.parallel,
         card.serialNumber, card.grade, card.condition, card.cardStatus, card.location,
-        card.tags, card.notes
+        card.tags, card.notes, card.purchasePrice, card.estimatedValue
       ].join(" ").toLowerCase();
       return haystack.includes(query);
     });
 
     const sort = fields.sortSelect.value;
-    if (sort === "valueHigh") list.sort((a, b) => Number(b.estimatedValue || 0) - Number(a.estimatedValue || 0));
-    if (sort === "valueLow") list.sort((a, b) => Number(a.estimatedValue || 0) - Number(b.estimatedValue || 0));
-    if (sort === "player") list.sort((a, b) => String(a.playerName || "").localeCompare(String(b.playerName || "")));
-    if (sort === "year") list.sort((a, b) => Number(a.year || 0) - Number(b.year || 0));
+    const num = value => Number(value || 0);
+    const text = value => String(value || "").toLowerCase();
+
+    if (sort === "playerAZ") list.sort((a, b) => text(a.playerName || a.brand).localeCompare(text(b.playerName || b.brand)));
+    if (sort === "playerZA") list.sort((a, b) => text(b.playerName || b.brand).localeCompare(text(a.playerName || a.brand)));
+    if (sort === "valueHigh") list.sort((a, b) => num(b.estimatedValue) - num(a.estimatedValue));
+    if (sort === "valueLow") list.sort((a, b) => num(a.estimatedValue) - num(b.estimatedValue));
+    if (sort === "paidHigh") list.sort((a, b) => num(b.purchasePrice) - num(a.purchasePrice));
+    if (sort === "paidLow") list.sort((a, b) => num(a.purchasePrice) - num(b.purchasePrice));
     if (sort === "newest") list.sort((a, b) => b.id - a.id);
+    if (sort === "oldest") list.sort((a, b) => a.id - b.id);
 
     return list;
   }
@@ -556,6 +581,7 @@
     }
 
     list.forEach(card => {
+      const cardProfit = (Number(card.estimatedValue) || 0) - (Number(card.purchasePrice) || 0);
       const div = document.createElement("div");
       div.className = "collector-card";
       div.innerHTML = `
@@ -572,6 +598,7 @@
           <p><strong>Status:</strong> ${escapeHTML(card.cardStatus)}</p>
           <p><strong>Paid:</strong> <span class="money">${money(card.purchasePrice)}</span></p>
           <p><strong>Value:</strong> <span class="money">${money(card.estimatedValue)}</span></p>
+          <p><strong>Card Profit/Loss:</strong> <span class="money">${money(cardProfit)}</span></p>
           <p><strong>Location:</strong> ${escapeHTML(card.location)}</p>
           <p><strong>Tags:</strong> ${escapeHTML(card.tags)}</p>
           <p><strong>Condition:</strong> ${escapeHTML(card.condition)}</p>
@@ -588,6 +615,22 @@
 
   fields.searchBox.addEventListener("input", renderCards);
   fields.sortSelect.addEventListener("change", renderCards);
+
+  function setSort(sortValue) {
+    fields.sortSelect.value = sortValue;
+    renderCards();
+
+    document.querySelectorAll(".sort-buttons button").forEach(btn => btn.classList.remove("active"));
+    if (sortValue === "playerAZ") document.getElementById("sortAZBtn").classList.add("active");
+    if (sortValue === "valueHigh") document.getElementById("sortHighValueBtn").classList.add("active");
+    if (sortValue === "valueLow") document.getElementById("sortLowValueBtn").classList.add("active");
+    if (sortValue === "newest") document.getElementById("sortNewestBtn").classList.add("active");
+  }
+
+  document.getElementById("sortAZBtn").addEventListener("click", () => setSort("playerAZ"));
+  document.getElementById("sortHighValueBtn").addEventListener("click", () => setSort("valueHigh"));
+  document.getElementById("sortLowValueBtn").addEventListener("click", () => setSort("valueLow"));
+  document.getElementById("sortNewestBtn").addEventListener("click", () => setSort("newest"));
 
   document.getElementById("exportBtn").addEventListener("click", () => {
     const data = JSON.stringify(cards, null, 2);
@@ -632,6 +675,7 @@
       await migrateOldLocalStorageCards();
       await refreshCards();
       fields.status.textContent = "Ready. IndexedDB storage is active.";
+      setSort("playerAZ");
     } catch (error) {
       fields.status.textContent = "Storage could not start.";
       console.error(error);
